@@ -75,11 +75,12 @@
     {{- $citationStyle = $.Site.Params.citationStyle }}
   {{- end }}
 {{- end }}
+
 {{- $partialPath := string (printf "bibliography/%s-style.html" $citationStyle) }}
 {{/* -------------------- END Citation style -------------------- */}}
 
 {{/* -------------------- BEGIN Bibliography path -------------------- */}}
-{{- $bibliographyPath := "" }}
+{{- $bibliographyPath := "content/bibliography.json" }}
 
 {{/* Default: check for a JSON file in the leaf bundle. */}}
 {{- $pageResource := $.Page.Resources.GetMatch "*bib*.json" -}}
@@ -146,7 +147,7 @@
                   {{- end -}}
                 {{- end -}}
                 {{ if gt (len $displayAuthors) 2 }}
-                  <em>&amp; al.</em>
+                  <em>et. al.</em>
                 {{- end -}}
               {{- end -}},&#32;
             {{- end -}}

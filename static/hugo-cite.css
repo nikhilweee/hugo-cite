@@ -6,7 +6,7 @@
   display: inline-block;
   vertical-align: baseline; /*compensate for lower height */
   position: relative;
-  font-size: .85em; /* reduce to avoid some breaks */
+  /* font-size: .85em; reduce to avoid some breaks */
 }
 .hugo-cite-group
   .hugo-cite-citation {
@@ -46,4 +46,13 @@
   overflow: hidden;
   position: absolute;
   width: 1px;
+}
+
+.hugo-cite-bibliography {
+  color: rgb(117, 117, 117);
+  font-size: 0.9em;
+}
+
+.hugo-cite-bibliography dd {
+  margin-bottom: 10px;
 }

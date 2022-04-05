@@ -96,5 +96,5 @@
 
 {{- end }}
 
-{{- $bibParams := dict "references" $references }}
+{{- $bibParams := dict "references" $references "Site" $.Site }}
 {{- partial "bibliography/bibliography-list.html" $bibParams }}
