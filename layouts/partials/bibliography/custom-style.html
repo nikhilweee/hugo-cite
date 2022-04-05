@@ -400,10 +400,10 @@
   &#32;
   {{- if .title -}}
   <span itemprop="name">
-    <i>{{/* italicize title */}}
+    <b><i>{{/* italicize title */}}
       {{- .title | markdownify -}}
       {{- if .subtitle }}: {{ .subtitle | markdownify }}{{- end -}}
-    </i></span>{{/* close to avoid space */}}
+    </i></b></span>{{/* close to avoid space */}}
   {{- end -}}
   {{- if isset . "edition" }} (
   <span span itemprop="workExample">{{ .edition }}</span>
