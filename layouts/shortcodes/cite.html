@@ -36,35 +36,40 @@
 {{- $pages := slice "" ";" -}}
 {{- $suppressAuthor := false -}}
 {{- $keySeparator := ";" -}}
+{{- $type := "paren" -}}
 
 {{/* -------------------- Named/Positional Params -------------------- */}}
 {{- if .IsNamedParams }}
-  {{/* -------------------- a) Named -------------------- */}}
+  {{/* -------------------- (a) Named -------------------- */}}
   {{- if not (.Get "key") -}}
     {{- errorf $errorMissingNamedParams -}}
   {{- else -}}
-    {{- $key = .Get "key" -}}
+    {{- $key = (.Get "key") | replaceRE "^-(.+)" "$1" -}}
+    {{- $keys = split $key $keySeparator -}}
+    {{- $type = .Get "type" -}}
     {{- $pages = split (.Get "pages" | string) ";" -}}
     {{- if .Get "suppressAuthor" }}
       {{- $suppressAuthor = true -}}
     {{- end -}}
   {{- end -}}
 {{- else -}}
-  {{/* -------------------- b) Positional -------------------- */}}
+  {{/* -------------------- (b) Positional -------------------- */}}
   {{- if lt (len .Params) 1 -}}
     {{- errorf $errorMissingValue (len .Params) -}}
   {{- else -}}
-  {{- $key = (.Get 0) | replaceRE "^-(.+)" "$1" -}}
-  {{ $keys = split $key $keySeparator -}}
-  {{- $pages = string (.Get 1) -}}
-  {{- if $pages -}}
-    {{- $pages = split $pages ";" -}}
-  {{- end -}}
-  {{- if (findRE "^-(.+)" (.Get 0) 1) -}}
-    {{- $suppressAuthor = true -}}
+    {{- $key = (.Get 0) | replaceRE "^-(.+)" "$1" -}}
+    {{- $keys = split $key $keySeparator -}}
+    {{- with (.Get 1) -}}
+      {{- $type = . -}}
+    {{- end -}}
+    {{- with string (.Get 2) -}}
+      {{- $pages = split . ";" -}}
+    {{- end -}}
+    {{- if (findRE "^-(.+)" (.Get 0) 1) -}}
+      {{- $suppressAuthor = true -}}
+    {{- end -}}
   {{- end -}}
 {{- end -}}
-
 {{- $totalRefs := len $keys -}}
 
 
@@ -85,111 +90,116 @@
 {{/* Default: check for a JSON file in the leaf bundle. */}}
 {{- $pageResource := $.Page.Resources.GetMatch "*bib*.json" -}}
 {{- if $pageResource }}
-{{- $constructedBibResource := printf "content/%s%s" $.Page.File.Dir $pageResource.Name }}
-{{- $bibliographyPath = $constructedBibResource }}
+  {{- $constructedBibResource := printf "content/%s%s" $.Page.File.Dir $pageResource.Name }}
+  {{- $bibliographyPath = $constructedBibResource }}
 {{- end }}
 
-{{- /* If a `bibFile` is specified in the page front-matter, it takes precedence
-  over a page resource. */ -}}
-{{- /* `specifiedBib` must be relative to project root */ -}}
+{{- /* If a `bibFile` is specified in the page front-matter, 
+       it takes precedence over a page resource. `specifiedBib`
+       must be relative to project root */ -}}
 {{- if $.Page.Params.bibFile }}
-{{- $bibliographyPath = $.Page.Params.bibFile -}}
+  {{- $bibliographyPath = $.Page.Params.bibFile -}}
 {{- end }}
 
-{{- if gt (len $bibliographyPath) 0 -}}{{/* Begin Bibliography Loop */}}
-{{- $bibliography := getJSON $bibliographyPath -}}
-{{- /* -------------------- END Bibliography path -------------------- */ -}}
+{{- /* Begin Bibliography Loop */ -}}
+{{- if gt (len $bibliographyPath) 0 -}}
+  {{- $bibliography := getJSON $bibliographyPath -}}
 
-  <span class="hugo-cite-intext"
-        itemprop="citation">(
+  <span class="hugo-cite-intext" itemprop="citation">
+  {{- if eq $type "paren" -}} ( {{- end -}}
 
-    {{- /* Range over citation keys */ -}}
+  {{- /* Range over citation keys */ -}}
 
-    {{- range $keyIndex, $key := $keys -}}
+  {{- range $keyIndex, $key := $keys -}}
+    {{- range where $bibliography "id" "eq" $key -}}
+      {{- $currentRef := . -}}
+      <span class="hugo-cite-group">
 
-      {{- range where $bibliography "id" "eq" $key -}}
-        {{- $currentRef := . -}}
-        <span class="hugo-cite-group">
+      {{/* Add to the collection of cited references */}}
+      {{- $.Page.Scratch.SetInMap "citedBib" $key $currentRef -}}
 
-          {{/* Add to the collection of cited references */}}
-          {{- $.Page.Scratch.SetInMap "citedBib" $key $currentRef -}}
+      {{/* Add to the collection of cited references */}}
+      {{- $.Page.Scratch.SetInMap "citedBib" $key $currentRef -}}
 
-          {{/* Add to the collection of cited references */}}
-          {{- $.Page.Scratch.SetInMap "citedBib" $key $currentRef -}}
+      <a href="#{{- $key | urlize -}}"><span class="visually-hidden">Citation: </span>
+      {{- $reference := . -}}
 
-          <a href="#{{- $key | urlize -}}"><span class="visually-hidden">Citation: </span>
-            {{- $reference := . -}}
-
-            {{- /* -------------------- BEGIN Display authors -------------------- */ -}}
-            {{- if not $suppressAuthor -}}
-              {{- $displayAuthors := $reference.author -}}
-              {{- if not $reference.author -}}
-                {{- $displayAuthors = $reference.editor -}}
-              {{- end -}}
-              {{- if not $displayAuthors -}}
-                <span rel="noauthor">
-                  {{- i18n "apa_no_author_abbr" | default "n.a." | upper -}}
-                </span>
-              {{- else -}}
-                {{- range $authorIndex, $author := $displayAuthors | first 2 -}}
-                  <span itemprop="author" itemscope itemtype="https://schema.org/Person">
-                    {{- with $author.given -}}
-                      <meta itemprop="givenName" content="{{ . }}">
-                    {{- end -}}
-                    {{- with $author.family -}}
-                      <span itemprop="familyName">{{ . | markdownify }}</span>
-                    {{- end -}}
-                  </span>
-                  {{- if and (eq $authorIndex 0) (gt (len $displayAuthors) 2) -}}
-                  ,&#32;
-                  {{- end -}}
-                  {{- if and (eq (len $displayAuthors) 2) (eq $authorIndex 0) -}}&#32;&amp;&#32;
-                  {{- end -}}
-                {{- end -}}
-                {{ if gt (len $displayAuthors) 2 }}
-                  <em>et. al.</em>
-                {{- end -}}
-              {{- end -}},&#32;
+      {{- /* -------------------- BEGIN Display authors -------------------- */ -}}
+      {{- if not $suppressAuthor -}}
+        {{- $displayAuthors := $reference.author -}}
+        {{- if not $reference.author -}}
+          {{- $displayAuthors = $reference.editor -}}
+        {{- end -}}
+        {{- if not $displayAuthors -}}
+          <span rel="noauthor">
+            {{- i18n "apa_no_author_abbr" | default "n.a." | upper -}}
+          </span>
+        {{- else -}}
+          {{- range $authorIndex, $author := $displayAuthors | first 1 -}}
+            <span itemprop="author" itemscope itemtype="https://schema.org/Person">
+            {{- with $author.given -}}
+              <meta itemprop="givenName" content="{{ . }}">
             {{- end -}}
-            {{- /* -------------------- END Display authors -------------------- */ -}}
-
-            {{- if and (isset $reference "issued") (isset $reference.issued "date-parts") -}}
-              {{- range $index, $dateParts := (index .issued "date-parts") -}}{{/* range of dates */}}
-                {{- range first 1 $dateParts -}}{{/* First element in date-part is the year */ -}}
-                <span itemprop="datePublished">
-                  {{- . -}}
-                </span>
-                {{- end -}}
-              {{- end -}}
+            {{- with $author.family -}}
+              <span itemprop="familyName">{{ . | markdownify }}</span>
             {{- end -}}
-            {{- $currentPages := index $pages $keyIndex -}}
-            {{- with $currentPages -}},&#32;
-            {{- $formatedPages := (printf "p.&nbsp;%s" $currentPages) | safeHTML -}}
-            {{- if gt (findRE "-" $currentPages) 0 -}}{{/* If `$pages` contains a dash */}}
-            {{- $formatedPages = (printf "pp.&nbsp;%s" $currentPages) | safeHTML -}}
+            </span>
+            <!--
+            {{- if and (eq $authorIndex 0) (gt (len $displayAuthors) 1) -}}
+              ,&#32;
             {{- end -}}
-            {{- $formatedPages }}{{- end -}}
-          </a>
+            {{- if and (eq (len $displayAuthors) 2) (eq $authorIndex 0) -}}
+              &#32;&amp;&#32;
+            {{- end -}}
+            -->
+          {{- end -}}
+          {{- if gt (len $displayAuthors) 1 -}}
+            <em> et. al.</em>
+          {{- end -}}
+        {{- end -}},&#32;
+      {{- end -}}
+      {{- /* -------------------- END Display authors -------------------- */ -}}
 
-          {{- /* Eliminate space between css-hidden citation hover block */ -}}
+      {{- if and (isset $reference "issued") (isset $reference.issued "date-parts") -}}
+        {{- range $index, $dateParts := (index .issued "date-parts") -}}
+        {{/* range of dates */}}
+          {{- range first 1 $dateParts -}}
+            {{/* First element in date-part is the year */ -}}
+            <span itemprop="datePublished">
+              {{- if eq $type "text" -}} ( {{- end -}}
+              {{- . -}}
+              {{- if eq $type "text" -}} ) {{- end -}}
+            </span>
+          {{- end -}}
+        {{- end -}}
+      {{- end -}}
+      {{- $currentPages := index $pages $keyIndex -}}
+      {{- with $currentPages -}},&#32;
+        {{- $formatedPages := (printf "p.&nbsp;%s" $currentPages) | safeHTML -}}
+        {{- if gt (findRE "-" $currentPages) 0 -}}{{/* If `$pages` contains a dash */}}
+          {{- $formatedPages = (printf "pp.&nbsp;%s" $currentPages) | safeHTML -}}
+        {{- end -}}
+        {{- $formatedPages }}
+      {{- end -}}
+      </a>
 
-          <span class="hugo-cite-citation"> {{ partial $partialPath $reference }}</span></span>
+      {{- /* Eliminate space between css-hidden citation hover block */ -}}
 
-        {{- if lt (add 1 $keyIndex) $totalRefs -}};&#32;{{- end -}}
+      <span class="hugo-cite-citation">{{ partial $partialPath $reference }}</span></span>
 
-      {{- else -}}
+      {{- if lt (add 1 $keyIndex) $totalRefs -}}
+        ;&#32;
+      {{- end -}}
 
-        {{- /*
-        Did not find reference with matching key
-        */ -}}
-        {{- $particularKeyErr := printf $defaultErrString $key -}}
-        {{- $errorNoMatchingKey := $particularKeyErr -}}
-        <span style="background-color: #f00; color: #fff;">{{- $errorNoMatchingKey -}}</span>
+    {{- else -}}
 
-        {{- end }}
-        {{- end }}
-      {{- end -}}{{/* End Bibliography Loop */ -}}
+      {{- /* Did not find reference with matching key */ -}}
+      {{- $particularKeyErr := printf $defaultErrString $key -}}
+      {{- $errorNoMatchingKey := $particularKeyErr -}}
+      <span style="background-color: #f00; color: #fff;">{{- $errorNoMatchingKey -}}</span>
 
-    {{- end -}}
-    {{- /* END loop over keys*/ -}}
-    )</span>
+    {{- end }}
+  {{- end }}
+  {{- if eq $type "paren" -}} ) {{- end -}}</span>
+{{- end -}}
+{{- /* End Bibliography Loop */ -}}
