@@ -192,10 +192,10 @@
   {{- template "issuedPart" . }}.
   &#32;
   {{- if .title -}}
-  <span itemprop="name">
+  <span itemprop="name"><b><i>
     {{- .title | markdownify -}}
     {{- if .subtitle }}: {{ .subtitle | markdownify }}{{- end -}}
-  </span>.
+  </i></b></span>.
   {{- end -}}
 
   {{- if isset . "container-title" -}}
