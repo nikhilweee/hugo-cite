@@ -273,6 +273,36 @@
 </span>
 {{/* -------------------- END ARTICLE TYPE -------------------- */}}
 
+{{/* -------------------- BEGIN PAPER TYPE -------------------- */}}
+{{- else if eq .type "paper-conference" -}}
+<span itemscope
+      itemtype="https://schema.org/Article"
+      data-type="article">
+  {{- template "authorPart" . }}
+  &#32;
+  {{- template "issuedPart" . }}.
+  &#32;
+  {{- if .title -}}
+  <span itemprop="name">
+    <b><i>{{- .title | markdownify -}}.</i></b>
+  </span>
+  {{- end -}}
+
+  {{- if isset . "container-title" -}}
+  {{/* italicize journal title */}}
+    <span itemprop="about">
+    {{- echoParam . "container-title" -}}</span>
+    {{- if isset . "volume" -}}
+    ,&#32;{{- .volume -}}
+    {{- end -}}
+    {{- if isset . "issue" }}({{ .issue }})
+    {{- end -}}
+    .{{- end -}}
+
+  {{- template "DOIPart" . -}}
+</span>
+{{/* -------------------- END PAPER TYPE -------------------- */}}
+
 {{/* -------------------- BEGIN WEBPAGE TYPE -------------------- */}}
 {{- else if eq .type "webpage" -}}
 <span itemscope
