@@ -141,6 +141,7 @@
               <span itemprop="familyName">{{ . | markdownify }}</span>
             {{- end -}}
             </span>
+            {{- /**/ -}}
             <!--
             {{- if and (eq $authorIndex 0) (gt (len $displayAuthors) 1) -}}
               ,&#32;
@@ -149,11 +150,12 @@
               &#32;&amp;&#32;
             {{- end -}}
             -->
+            {{- /**/ -}}
           {{- end -}}
           {{- if gt (len $displayAuthors) 1 -}}
-            <em> et. al.</em>
+            <em> et. al.</em>,
           {{- end -}}
-        {{- end -}},&#32;
+        {{- end -}}&#32;
       {{- end -}}
       {{- /* -------------------- END Display authors -------------------- */ -}}
 

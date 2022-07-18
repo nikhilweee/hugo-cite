@@ -46,7 +46,8 @@
   {{- else -}}{{/* Fallback if no authors are specified */}}
   ({{- i18n "apa_no_author_abbr" | default "n.a." | upper -}}).
   {{- end -}}
-{{- end -}}{{/* END author */}}
+{{- end -}}
+{{/* END author */}}
 
 {{/* BEGIN editor */}}
 {{- define "editorPart" }}
@@ -192,10 +193,10 @@
   {{- template "issuedPart" . }}.
   &#32;
   {{- if .title -}}
-  <span itemprop="name"><b><i>
+  <span itemprop="name"><b>
     {{- .title | markdownify -}}
     {{- if .subtitle }}: {{ .subtitle | markdownify }}{{- end -}}
-  </i></b></span>.
+  </b></span>.
   {{- end -}}
 
   {{- if isset . "container-title" -}}
@@ -246,7 +247,7 @@
   &#32;
   {{- if .title -}}
   <span itemprop="name">
-    <b><i>{{- .title | markdownify -}}.</i></b>
+    <b>{{- .title | markdownify -}}.</b>
   </span>
   {{- end -}}
 
@@ -284,7 +285,7 @@
   &#32;
   {{- if .title -}}
   <span itemprop="name">
-    <b><i>{{- .title | markdownify -}}.</i></b>
+    <b>{{- .title | markdownify -}}.</b>
   </span>
   {{- end -}}
 
@@ -430,10 +431,10 @@
   &#32;
   {{- if .title -}}
   <span itemprop="name">
-    <b><i>{{/* italicize title */}}
+    <b>{{/* italicize title */}}
       {{- .title | markdownify -}}
       {{- if .subtitle }}: {{ .subtitle | markdownify }}{{- end -}}
-    </i></b></span>{{/* close to avoid space */}}
+    </b></span>{{/* close to avoid space */}}
   {{- end -}}
   {{- if isset . "edition" }} (
   <span span itemprop="workExample">{{ .edition }}</span>
